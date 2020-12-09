@@ -893,10 +893,10 @@ class Translator(object):
                     src_map=src_map,
                     step=step,
                     batch_offset=decode_strategy.batch_offset)
-                # if step == 0 and self.model.prior is not None:
-                #     lprob_z = self.model.prior(memory_bank, memory_lengths)
-                #     log_probs += tile(lprob_z[:, self.expert_id].unsqueeze(-1), 
-                #                     self._tgt_vocab_len, dim=1)
+                if step == 0 and self.model.prior is not None:
+                    lprob_z = self.model.prior(memory_bank, memory_lengths)
+                    log_probs += tile(lprob_z[:, self.expert_id].unsqueeze(-1), 
+                                      self._tgt_vocab_len, dim=1)
 
                 decode_strategy.advance(log_probs, attn)
                 any_finished = decode_strategy.is_finished.any()

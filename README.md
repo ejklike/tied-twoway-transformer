@@ -14,10 +14,10 @@ This repository is an implementation of "Valid, Plausible, and Diverse Retrosynt
 
 ## Preprocess
 
-The USPTO-50k dataset is located in `./data/USPTO-50k_no_rxn`.
+The USPTO-50k dataset is located in `./data/`. To train the model, the dataset needs to be preprocessed.
 
 ```
-DATA=data/USPTO-50k_no_rxn
+DATA=data
 
 TRAIN_SRC=$DATA/src-train.txt
 VALID_SRC=$DATA/src-val.txt
@@ -36,6 +36,8 @@ python preprocess.py \
 
 
 ## Train
+
+Train the model using the preprocessed dataset. In the code below, the dimension of multinomial latent variable, `num_experts`, is set to 1. In the paper, we tested the dimension for 1, 2, and 5.
 
 ```
 OUT="onmt-runs"
@@ -58,13 +60,16 @@ python train.py -data $DATA_PREFIX \
     2>&1 | tee -a $OUT/model/train.log
 ```
 
-<!-- echo "Step 3a: Average Models"
-models="$OUT/$NAME/${NAME}_step_10.pt \
-        $OUT/$NAME/${NAME}_step_20.pt \
-        $OUT/$NAME/${NAME}_step_30.pt \
-        $OUT/$NAME/${NAME}_step_40.pt \
-        $OUT/$NAME/${NAME}_step_50.pt"
-MODEL="$OUT/$NAME/${NAME}_step_50_avg5.pt"
+
+<-- After finishing the training, we average the last 5 models. For example, below is the code for averaging 5 models.
+
+```
+models="$OUT/model/model_step_25000.pt \
+        $OUT/model/model_step_30000.pt \
+        $OUT/model/model_step_35000.pt \
+        $OUT/model/model_step_40000.pt \
+        $OUT/model/model_step_45000.pt"
+MODEL="$OUT/model/model_step_45000_avg5.pt"
 
 python average_models.py -models $models -output $MODEL -->
 
@@ -90,3 +95,29 @@ python translate.py -model $MODEL \
     -batch_size 128 \
     -replace_unk -gpu 0
 ```
+
+
+<-- ## Reproducibility
+
+For those who want to reproduce the results in the paper, we have released one of the trained models which can be downloaded in [XX](aa). After 
+
+```
+DATA=data
+TEST_SRC=$DATA/src-test.txt
+TEST_TGT=$DATA/tgt-test.txt
+
+MODEL="$OUT/USPTO_S2024_L2.pt"
+
+TRANSLATE_OUT=$OUT/$MODEL/results
+[ -d $TRANSLATE_OUT ] || mkdir -p $TRANSLATE_OUT
+
+python translate.py -model $MODEL \
+    -src $TEST_SRC -tgt $TEST_TGT \
+    -output $TRANSLATE_OUT \
+    -beam_size 10 -n_best 10 \
+    -max_length 200 \
+    -num_experts 1 \
+    -batch_size 128 \
+    -replace_unk -gpu 0
+```
+-->

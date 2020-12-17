@@ -37,7 +37,7 @@ python preprocess.py \
 
 ## Train
 
-Train the model using the preprocessed dataset. In the code below, the dimension of multinomial latent variable, `num_experts`, is set to 1. In the paper, we tested the dimension for 1, 2, and 5.
+Train the model using the preprocessed dataset. In the paper, we tested the dimension of multinomial latent variable for 1, 2, and 5. In the code below, the dimension, `num_experts`, is set to 1. 
 
 ```
 OUT="onmt-runs"
@@ -61,23 +61,26 @@ python train.py -data $DATA_PREFIX \
 ```
 
 
-<-- After finishing the training, we average the last 5 models. For example, below is the code for averaging 5 models.
+After finishing the training, we averaged the last 5 models. For example, below is the code for averaging 5 models.
 
 ```
-models="$OUT/model/model_step_25000.pt \
+models="$OUT/model/model_step_20000.pt \
+        $OUT/model/model_step_25000.pt \
         $OUT/model/model_step_30000.pt \
         $OUT/model/model_step_35000.pt \
-        $OUT/model/model_step_40000.pt \
-        $OUT/model/model_step_45000.pt"
-MODEL="$OUT/model/model_step_45000_avg5.pt"
+        $OUT/model/model_step_40000.pt" 
+MODEL="$OUT/model/model_step_40000_avg5.pt"
 
-python average_models.py -models $models -output $MODEL -->
+python average_models.py -models $models -output $MODEL
+```
 
 
 ## Inference & Evaluation
 
+You can use the code below to evaluate the model for a given test dataset.
+
 ```
-DATA=data/USPTO-50k_no_rxn
+DATA=data
 TEST_SRC=$DATA/src-test.txt
 TEST_TGT=$DATA/tgt-test.txt
 
@@ -97,18 +100,19 @@ python translate.py -model $MODEL \
 ```
 
 
-<-- ## Reproducibility
+### Reproducing the results & Choosing the number of latent dimension
 
-For those who want to reproduce the results in the paper, we have released one of the trained models which can be downloaded in [XX](aa). After 
+For those who want to reproduce the results in the paper, we have released one of the trained models which can be downloaded from <https://www.dropbox.com/s/57wdw8a937ruvwn/model_L2.pt?dl=0>. This model is trained with the latent dimension of `2`. After downloading the model in the `./onmt-runs/` directory, try the code below. Note that the `num_experts` option is set to `2` since the latent dimension of the model is `2`. As the dimension increases, the diversity in results improved (please refer the paper for details). However, there is a trade-off between the dimension and speed. So, we have tested the dimension for `1`, `2`, and `5`.
 
 ```
 DATA=data
 TEST_SRC=$DATA/src-test.txt
 TEST_TGT=$DATA/tgt-test.txt
 
-MODEL="$OUT/USPTO_S2024_L2.pt"
+OUT="onmt-runs"
+MODEL="$OUT/USPTO_L2.pt"
 
-TRANSLATE_OUT=$OUT/$MODEL/results
+TRANSLATE_==$OUT/USPTO_L2_results
 [ -d $TRANSLATE_OUT ] || mkdir -p $TRANSLATE_OUT
 
 python translate.py -model $MODEL \
@@ -116,8 +120,23 @@ python translate.py -model $MODEL \
     -output $TRANSLATE_OUT \
     -beam_size 10 -n_best 10 \
     -max_length 200 \
-    -num_experts 1 \
+    -num_experts 2 \
     -batch_size 128 \
     -replace_unk -gpu 0
 ```
--->
+
+The translation and evaluation results can be found in `onmt-runs/USPTO_L2_results/`. Open `onmt-runs/USPTO_L2_results/pred_cycle_lp2.txt.score` to check the evaluation results. The top 10 rows show k (first column), top-k accuarcy (second column), and invalid SMILES rates (third column) while the last row is unique rate.
+
+```
+1,46.7226,0.059952
+2,61.0312,0.069944
+3,67.9856,0.113243
+4,71.7426,0.194844
+5,74.0008,0.335731
+6,75.4396,0.516254
+7,76.6787,0.845038
+8,77.2982,1.46133
+9,77.8377,2.62457
+10,78.1775,4.60631
+89.8321
+```
